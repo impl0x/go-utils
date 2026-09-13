@@ -99,7 +99,7 @@ func (tc *TTLCache[K, V]) LoopFunc(fn func(key K, value V, expiresAt time.Time) 
 
 // cleaner function to clean up expired items on a set time interval
 //
-// ! warning: only use with [BasicCache], otherwise panics
+// ! warning: only use with [BasicCache], otherwise panics, currently support for other caches are not present
 func cleaner[K k, V v](tc *TTLCache[K, V], interval time.Duration) {
 	basicCache, ok := tc.cache.(*BasicCache[K, ttlItem[V]])
 	if !ok {
