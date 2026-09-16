@@ -10,7 +10,7 @@ type SyncMapCache[K k, V v] struct {
 }
 
 // Instantiates a new sync map cache using the generic types provided to this constructor function
-func NewSyncMapCache[K k, V v]()*SyncMapCache[K,V]{
+func NewSyncMapCache[K k, V v]() *SyncMapCache[K, V] {
 	return &SyncMapCache[K, V]{}
 }
 
@@ -22,7 +22,11 @@ func (sm *SyncMapCache[K, V]) Add(key K, value V) {
 // Gets a value with the key provided, returning bool to convey wether the key exists
 func (sm *SyncMapCache[K, V]) Get(key K) (V, bool) {
 	v, ok := sm.m.Load(key)
-	return v.(V), ok
+	var val V
+	if ok {
+		val = v.(V)
+	}
+	return val, ok
 }
 
 // Updates a value with the key provided. Does nothing if key doesn't exist
