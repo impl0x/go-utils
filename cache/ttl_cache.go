@@ -58,12 +58,12 @@ func (tc *TTLCache[K, V]) Add(key K, value V, expiresAt time.Time) {
 // Gets a value with the key provided, returning bool to convey wether the key exists, and the expiresAt time
 //
 // If passive delete was enabled at startup then expired items are deleted automatically here
-func (tc *TTLCache[K, V]) Get(key K) (V, bool, time.Time) {
+func (tc *TTLCache[K, V]) Get(key K) (V, time.Time, bool) {
 	r, ok := tc.cache.Get(key)
 	if ok && tc.passiveDelete && r.expiresAt.Before(time.Now()) {
 		tc.Delete(key)
 	}
-	return r.value, ok, r.expiresAt
+	return r.value, r.expiresAt, ok
 }
 
 // Updates a value with the key provided. Does nothing if key doesn't exist
