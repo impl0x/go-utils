@@ -11,17 +11,17 @@ type Logger struct {
 // Do not pass this as a pointer,
 // this already holds a pointer to the underlying logging engine,
 // so just use this as is.
-func NewLogger(l Level) Logger {
-	return Logger{
-		l,
-		newEngine(DefaultConfig),
-	}
+func NewLogger(l Level, opts ...Option) Logger {
+	return NewLoggerWithConfig(l, DefaultConfig, opts...)
 }
 
-func NewLoggerWithConfig(l Level, c Config) Logger {
+func NewLoggerWithConfig(l Level, c Config, opts ...Option) Logger {
+	for _, op := range opts {
+		op(&c)
+	}
 	return Logger{
-		l,
-		newEngine(c),
+		level: l,
+		e:     newEngine(c),
 	}
 }
 
