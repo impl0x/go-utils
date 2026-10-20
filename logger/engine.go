@@ -1,19 +1,18 @@
 package logger
 
 import (
-	"github.com/impl0x/go-utils/logger/utils"
 	"bytes"
 	"math"
+
+	"github.com/impl0x/go-utils/logger/utils"
 )
 
 type engine struct {
-	config     Config
-	pool       _pool // 5 pools, each having a max cap, 64, 128, 256, 512, inf, panics if capacity exceeds limit of any buffer in the pool
-	timeWriter timeWriter
+	config      Config
+	pool        _pool
+	timeWriter  timeWriter
+	batchWriter batchWriter
 }
-
-var bufMaxSizes = [5]int{64, 128, 256, 512, math.MaxInt}
-var bufMinSizes = [5]int{32, 64, 128, 256, 256}
 
 func newEngine(config Config) *engine {
 	n := func() *bytes.Buffer {
@@ -26,9 +25,10 @@ func newEngine(config Config) *engine {
 			math.MaxInt,
 			utils.NewPool(n),
 		},
-		timeWriter: newTimeWriter(config.Time),
+		timeWriter:  newTimeWriter(config.Time),
+		batchWriter: newBatchWriter(config.Output),
 	}
-
+	go e.batchWriter.flusher()
 	return &e
 }
 
@@ -47,11 +47,11 @@ func (e *engine) log(l level, m string, kv []string) {
 
 	b.WriteString(e.config.Log.LevelMsgSep)
 
-	writeColorStart(b, e.config.Color.MsgColor)
+	writeColorStart(b, e.config.Color.MessageColor)
 	b.WriteString(m)
 
 	if kv != nil {
-		b.WriteString(e.config.Log.MsgExtraSep)
+		b.WriteString(e.config.Log.MessageExtraSep)
 	}
 	for i, v := range kv {
 		if i%2 == 0 {
@@ -67,7 +67,8 @@ func (e *engine) log(l level, m string, kv []string) {
 
 	b.WriteByte('\n')
 
-	b.WriteTo(e.config.Output)
+	e.batchWriter.write(b.Bytes())
+
 	// put back
 	e.pool.Put(b)
 }
