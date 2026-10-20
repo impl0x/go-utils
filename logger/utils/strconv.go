@@ -1,13 +1,20 @@
 package utils
 
-import "bytes"
+import (
+	"io"
+)
+
+type WriteAble interface {
+	io.ByteWriter
+	io.Writer
+}
 
 type Integer interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64 |
 		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
 }
 
-func WriteInteger[T Integer](b *bytes.Buffer, n T) {
+func WriteInteger[T Integer](b WriteAble, n T) {
 	if n < 0 {
 		b.WriteByte('-')
 		writeUint64(b, uint64(-(n+1))+1)
@@ -17,7 +24,7 @@ func WriteInteger[T Integer](b *bytes.Buffer, n T) {
 	writeUint64(b, uint64(n))
 }
 
-func writeUint64(b *bytes.Buffer, n uint64) {
+func writeUint64(b WriteAble, n uint64) {
 	var buf [20]byte // max length of max uint64
 	pos := len(buf)
 
