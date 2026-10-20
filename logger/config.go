@@ -1,24 +1,52 @@
 package logger
 
 import (
-	"github.com/impl0x/go-utils/logger/color"
 	"io"
 	"os"
+	"time"
+
+	"github.com/impl0x/go-utils/logger/color"
 )
 
+type Option func(*Config)
+
+func WithLevelColors(lc LevelColors) Option {
+	return func(c *Config) {
+		c.Color.Levels = lc
+	}
+}
+
+func WithTimeColor(col color.RGB) Option {
+	return func(c *Config) {
+		c.Color.Time = col
+	}
+}
+
+func WithMessageColor(col color.RGB) Option {
+	return func(c *Config) {
+		c.Color.MessageColor = col
+	}
+}
+
 type Config struct {
-	Output io.Writer
+	Output OutputConfig
 	Log    LogConfig
 	Time   TimeConfig
 	Color  ColorConfig
 	Others OtherConfig
 }
 
+type OutputConfig struct {
+	Output         io.Writer
+	FlushMaxTime   time.Duration // will hold the buffer for this long before flushing it to output
+	FlushMaxBuffer int           // will hold the buffer till this length before flushing it to output
+}
+
 type LogConfig struct {
-	TimeLevelSep   string // 09:24:10 PM" "INF Hello world extraKey=extraVal
-	LevelMsgSep    string // 09:24:10 PM INF" "Hello world extraKey=extraVal
-	MsgExtraSep    string // 09:24:10 PM INF Hello world" "extraKey=extraVal
-	ExtraKeyValSep string // 09:24:10 PM INF Hello world extraKey" "extraVal
+	TimeLevelSep    string // 09:24:10 PM" "INF Hello world extraKey=extraVal
+	LevelMsgSep     string // 09:24:10 PM INF" "Hello world extraKey=extraVal
+	MessageExtraSep string // 09:24:10 PM INF Hello world" "extraKey=extraVal
+	ExtraKeyValSep  string // 09:24:10 PM INF Hello world extraKey" "extraVal
 }
 
 // config for the time part of the log,
@@ -50,12 +78,13 @@ const (
 )
 
 type ColorConfig struct {
-	Time     color.RGB
-	Levels   LevelColors
-	MsgColor color.RGB
-	ExKey    color.RGB
-	ExVal    color.RGB
+	Time         color.RGB
+	Levels       LevelColors
+	MessageColor color.RGB
+	ExKey        color.RGB
+	ExVal        color.RGB
 }
+
 type LevelColors struct {
 	Trace color.RGB
 	Debug color.RGB
@@ -89,12 +118,16 @@ type OtherConfig struct {
 }
 
 var DefaultConfig = Config{
-	Output: os.Stdout,
+	Output: OutputConfig{
+		Output:         os.Stdout,
+		FlushMaxTime:   250 * time.Millisecond, // will flush every 100 millisecond as default, decrease if want faster logging or increase if doesn't care about output timing, lowest can be a millisecond
+		FlushMaxBuffer: 32768,                  // 32 kb buffer
+	},
 	Log: LogConfig{
-		TimeLevelSep:   " ",
-		LevelMsgSep:    " ",
-		MsgExtraSep:    " ",
-		ExtraKeyValSep: "=",
+		TimeLevelSep:    " ",
+		LevelMsgSep:     " ",
+		MessageExtraSep: " ",
+		ExtraKeyValSep:  "=",
 	},
 	Time: TimeConfig{
 		TimeSep:                    ":",
@@ -118,9 +151,9 @@ var DefaultConfig = Config{
 			Error: color.NewRGB(200, 0, 0),     // #c80000
 			Fatal: color.NewRGB(255, 0, 255),   // #ff00ff
 		},
-		MsgColor: color.White[1],
-		ExKey:    color.NewRGB(10, 117, 119), // #0a7577
-		ExVal:    color.White[3],
+		MessageColor: color.White[1],
+		ExKey:        color.NewRGB(10, 117, 119), // #0a7577
+		ExVal:        color.White[3],
 	},
 	Others: OtherConfig{
 		PanicAtFatal: true,
