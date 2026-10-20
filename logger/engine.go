@@ -69,6 +69,8 @@ func (e *engine) log(l level, m string, kv []string) {
 
 	e.batchWriter.write(b.Bytes())
 
+	b.Reset() // reset length
+
 	// put back
 	e.pool.Put(b)
 }
