@@ -6,9 +6,9 @@ import (
 )
 
 type batchWriter struct {
-	buf      []byte
-	config   OutputConfig
-	mu       sync.Mutex
+	buf    []byte
+	config OutputConfig
+	mu     sync.Mutex
 }
 
 func newBatchWriter(oc OutputConfig) batchWriter {
