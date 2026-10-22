@@ -10,21 +10,33 @@ import (
 
 type Option func(*Config)
 
-func WithLevelColors(lc LevelColors) Option {
+func WithOutputConfig(oc OutputConfig) Option {
 	return func(c *Config) {
-		c.Color.Levels = lc
+		c.Output = oc
 	}
 }
 
-func WithTimeColor(col color.RGB) Option {
+func WithLogConfig(lc LogConfig) Option {
 	return func(c *Config) {
-		c.Color.Time = col
+		c.Log = lc
 	}
 }
 
-func WithMessageColor(col color.RGB) Option {
+func WithTimeConfig(tc TimeConfig) Option {
 	return func(c *Config) {
-		c.Color.MessageColor = col
+		c.Time = tc
+	}
+}
+
+func WithColorConfig(cc ColorConfig) Option {
+	return func(c *Config) {
+		c.Color = cc
+	}
+}
+
+func WithOtherConfig(oc OtherConfig) Option {
+	return func(c *Config) {
+		c.Others = oc
 	}
 }
 
@@ -37,9 +49,10 @@ type Config struct {
 }
 
 type OutputConfig struct {
-	Output         io.Writer
-	FlushMaxTime   time.Duration // will hold the buffer for this long before flushing it to output
-	FlushMaxBuffer int           // will hold the buffer till this length before flushing it to output
+	Output                 io.Writer
+	UseBatching            bool          // uses batching to output logs else directly writes to output without batches on every call to logger
+	BatchingFlushMaxTime   time.Duration // will hold the buffer for this long before flushing it to output
+	BatchingFlushMaxBuffer int           // will hold the buffer till this length before flushing it to output
 }
 
 type LogConfig struct {
@@ -118,44 +131,52 @@ type OtherConfig struct {
 }
 
 var DefaultConfig = Config{
-	Output: OutputConfig{
-		Output:         os.Stdout,
-		FlushMaxTime:   250 * time.Millisecond, // will flush every 100 millisecond as default, decrease if want faster logging or increase if doesn't care about output timing, lowest can be a millisecond
-		FlushMaxBuffer: 32768,                  // 32 kb buffer
-	},
-	Log: LogConfig{
-		TimeLevelSep:    " ",
-		LevelMsgSep:     " ",
-		MessageExtraSep: " ",
-		ExtraKeyValSep:  "=",
-	},
-	Time: TimeConfig{
-		TimeSep:                    ":",
-		DateSep:                    "-",
-		DateTimeSep:                " ",
-		ShowDate:                   false,
-		ShowFullYear:               true,
-		ShowTime:                   true,
-		TimeFormat:                 Format12Hr,
-		AddSpaceFor12HrFormat:      true,
-		AddZerosForSingleDigitDate: true,
-		AddZerosForSingleDigitTime: true,
-	},
-	Color: ColorConfig{
-		Time: color.White[5],
-		Levels: LevelColors{
-			Trace: color.NewRGB(128, 128, 128), // #808080
-			Debug: color.NewRGB(0, 192, 255),   // #00c0ff
-			Info:  color.NewRGB(0, 200, 0),     // #00c800
-			Warn:  color.NewRGB(255, 165, 0),   // #ffa500
-			Error: color.NewRGB(200, 0, 0),     // #c80000
-			Fatal: color.NewRGB(255, 0, 255),   // #ff00ff
-		},
-		MessageColor: color.White[1],
-		ExKey:        color.NewRGB(10, 117, 119), // #0a7577
-		ExVal:        color.White[3],
-	},
-	Others: OtherConfig{
-		PanicAtFatal: true,
-	},
+	Output: DefaultOutputConfig,
+	Log:    DefaultLogConfig,
+	Time:   DefaultTimeConfig,
+	Color:  DefaultColorConfig,
+	Others: DefaultOtherConfig,
+}
+
+var DefaultOutputConfig = OutputConfig{
+	Output:                 os.Stdout,
+	UseBatching:            true,
+	BatchingFlushMaxTime:   250 * time.Millisecond, // will flush every 100 millisecond as default, decrease if want faster logging or increase if doesn't care about output timing, lowest can be a millisecond
+	BatchingFlushMaxBuffer: 32768,                  // 32 kb buffer
+}
+var DefaultLogConfig = LogConfig{
+	TimeLevelSep:    " ",
+	LevelMsgSep:     " ",
+	MessageExtraSep: " ",
+	ExtraKeyValSep:  "=",
+}
+var DefaultTimeConfig = TimeConfig{
+	TimeSep:                    ":",
+	DateSep:                    "-",
+	DateTimeSep:                " ",
+	ShowDate:                   false,
+	ShowFullYear:               true,
+	ShowTime:                   true,
+	TimeFormat:                 Format12Hr,
+	AddSpaceFor12HrFormat:      true,
+	AddZerosForSingleDigitDate: true,
+	AddZerosForSingleDigitTime: true,
+}
+var DefaultLevelColors = LevelColors{
+	Trace: color.NewRGB(128, 128, 128), // #808080
+	Debug: color.NewRGB(0, 192, 255),   // #00c0ff
+	Info:  color.NewRGB(0, 200, 0),     // #00c800
+	Warn:  color.NewRGB(255, 165, 0),   // #ffa500
+	Error: color.NewRGB(200, 0, 0),     // #c80000
+	Fatal: color.NewRGB(255, 0, 255),   // #ff00ff
+}
+var DefaultColorConfig = ColorConfig{
+	Time:         color.White[5],
+	Levels:       DefaultLevelColors,
+	MessageColor: color.White[1],
+	ExKey:        color.NewRGB(10, 117, 119), // #0a7577
+	ExVal:        color.White[3],
+}
+var DefaultOtherConfig = OtherConfig{
+	PanicAtFatal: true,
 }

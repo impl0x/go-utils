@@ -25,10 +25,12 @@ func newEngine(config Config) *engine {
 			math.MaxInt,
 			utils.NewPool(n),
 		},
-		timeWriter:  newTimeWriter(config.Time),
-		batchWriter: newBatchWriter(config.Output),
+		timeWriter: newTimeWriter(config.Time),
 	}
-	go e.batchWriter.flusher()
+	if config.Output.UseBatching {
+		e.batchWriter = newBatchWriter(config.Output)
+		go e.batchWriter.flusher()
+	}
 	return &e
 }
 
@@ -67,9 +69,12 @@ func (e *engine) log(l level, m string, kv []string) {
 
 	b.WriteByte('\n')
 
-	e.batchWriter.write(b.Bytes())
-
-	b.Reset() // reset length
+	if e.config.Output.UseBatching {
+		e.batchWriter.write(b.Bytes())
+		b.Reset() // reset length
+	} else {
+		b.WriteTo(e.config.Output.Output)
+	}
 
 	// put back
 	e.pool.Put(b)
