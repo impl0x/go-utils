@@ -140,10 +140,11 @@ type OutputConfig struct {
 }
 
 type LogConfig struct {
-	TimeLevelSep    string // 09:24:10 PM" "INF Hello world extraKey=extraVal
-	LevelMsgSep     string // 09:24:10 PM INF" "Hello world extraKey=extraVal
-	MessageExtraSep string // 09:24:10 PM INF Hello world" "extraKey=extraVal
-	ExtraKeyValSep  string // 09:24:10 PM INF Hello world extraKey" "extraVal
+	TimeLevelSep    string // 09:24:10 PM" "INF Hello world extraKey=extraVal extraKey2= extraVal2
+	LevelMsgSep     string // 09:24:10 PM INF" "Hello world extraKey=extraVal extraKey2= extraVal2
+	MessageExtraSep string // 09:24:10 PM INF Hello world" "extraKey=extraVal extraKey2= extraVal2
+	ExtraKeyValSep  string // 09:24:10 PM INF Hello world extraKey" "extraVal extraKey2= extraVal2
+	ExtraSep        string // 09:24:10 PM INF Hello world extraKey= extraVal" "extraKey2= extraVal2
 }
 
 // config for the time part of the log,
@@ -233,6 +234,7 @@ var DefaultLogConfig = LogConfig{
 	LevelMsgSep:     " ",
 	MessageExtraSep: " ",
 	ExtraKeyValSep:  "= ",
+	ExtraSep:        " ",
 }
 var DefaultTimeConfig = TimeConfig{
 	TimeSep:                    ":",

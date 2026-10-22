@@ -66,6 +66,7 @@ func (e *engine) log(l level, m string, kv []string) {
 		} else {
 			writeColorStart(b, e.config.Color.ExVal)
 			b.WriteString(v)
+			b.WriteString(e.config.Log.ExtraSep)
 		}
 	}
 	writeColorEnd(b)
