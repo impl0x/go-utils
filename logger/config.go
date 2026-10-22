@@ -232,7 +232,7 @@ var DefaultLogConfig = LogConfig{
 	TimeLevelSep:    " ",
 	LevelMsgSep:     " ",
 	MessageExtraSep: " ",
-	ExtraKeyValSep:  "=",
+	ExtraKeyValSep:  "= ",
 }
 var DefaultTimeConfig = TimeConfig{
 	TimeSep:                    ":",
