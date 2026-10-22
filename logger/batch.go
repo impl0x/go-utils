@@ -28,8 +28,7 @@ func (bw *batchWriter) write(b []byte) {
 }
 
 // calls flush once per max flush time to flush output
-func (bw *batchWriter) flusher() {
-	t := time.NewTicker(bw.config.BatchingFlushMaxTime)
+func (bw *batchWriter) flusher(t *time.Ticker) {
 	for range t.C {
 		bw.mu.Lock()
 		bw.flush()

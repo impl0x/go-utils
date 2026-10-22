@@ -3,6 +3,7 @@ package logger
 import (
 	"bytes"
 	"math"
+	"time"
 
 	"github.com/impl0x/go-utils/logger/utils"
 )
@@ -12,14 +13,15 @@ type engine struct {
 	pool        _pool
 	timeWriter  timeWriter
 	batchWriter batchWriter
+	batchTicker *time.Ticker
 }
 
-func newEngine(config Config) *engine {
+func newEngine(config *Config) *engine {
 	n := func() *bytes.Buffer {
 		return &bytes.Buffer{}
 	}
 	e := engine{
-		config: config,
+		config: *config,
 		pool: _pool{
 			256,
 			math.MaxInt,
@@ -29,7 +31,8 @@ func newEngine(config Config) *engine {
 	}
 	if config.Output.UseBatching {
 		e.batchWriter = newBatchWriter(config.Output)
-		go e.batchWriter.flusher()
+		e.batchTicker = time.NewTicker(config.Output.BatchingFlushMaxTime)
+		go e.batchWriter.flusher(e.batchTicker)
 	}
 	return &e
 }

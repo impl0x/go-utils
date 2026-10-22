@@ -10,17 +10,39 @@ import (
 
 type Option func(*Config)
 
-func WithOutputConfig(oc OutputConfig) Option {
+// output config
+
+func WithOutputWriter(w io.Writer) Option {
 	return func(c *Config) {
-		c.Output = oc
+		c.Output.Output = w
 	}
 }
 
-func WithLogConfig(lc LogConfig) Option {
+func WithOutputBatchingOFF(c *Config) {
+	c.Output.UseBatching = false
+}
+
+func WithOutputMaxFlushBufferSize(s uint) Option {
+	return func(c *Config) {
+		c.Output.BatchingFlushMaxBuffer = int(s)
+	}
+}
+
+func WithOutputMaxFlushTime(td time.Duration) Option {
+	return func(c *Config) {
+		c.Output.BatchingFlushMaxTime = td
+	}
+}
+
+// log config
+
+func WithLogSeparators(lc LogConfig) Option {
 	return func(c *Config) {
 		c.Log = lc
 	}
 }
+
+// time config
 
 func WithTimeConfig(tc TimeConfig) Option {
 	return func(c *Config) {
@@ -28,16 +50,78 @@ func WithTimeConfig(tc TimeConfig) Option {
 	}
 }
 
+// color config
+
 func WithColorConfig(cc ColorConfig) Option {
 	return func(c *Config) {
 		c.Color = cc
 	}
 }
 
-func WithOtherConfig(oc OtherConfig) Option {
+func WithTimeColor(col color.RGB) Option {
 	return func(c *Config) {
-		c.Others = oc
+		c.Color.Time = col
 	}
+}
+
+func WithMessageColor(col color.RGB) Option {
+	return func(c *Config) {
+		c.Color.MessageColor = col
+	}
+}
+
+func WithExtraKeyColor(col color.RGB) Option {
+	return func(c *Config) {
+		c.Color.ExKey = col
+	}
+}
+
+func WithExtraValueColor(col color.RGB) Option {
+	return func(c *Config) {
+		c.Color.ExVal = col
+	}
+}
+
+func WithTraceColor(col color.RGB) Option {
+	return func(c *Config) {
+		c.Color.Levels.Trace = col
+	}
+}
+
+func WithDebugColor(col color.RGB) Option {
+	return func(c *Config) {
+		c.Color.Levels.Debug = col
+	}
+}
+
+func WithInfoColor(col color.RGB) Option {
+	return func(c *Config) {
+		c.Color.Levels.Info = col
+	}
+}
+
+func WithWarnColor(col color.RGB) Option {
+	return func(c *Config) {
+		c.Color.Levels.Warn = col
+	}
+}
+
+func WithErrorColor(col color.RGB) Option {
+	return func(c *Config) {
+		c.Color.Levels.Error = col
+	}
+}
+
+func WithFatalColor(col color.RGB) Option {
+	return func(c *Config) {
+		c.Color.Levels.Fatal = col
+	}
+}
+
+// other config
+
+func WithPanicAtFatalOFF(c *Config) {
+	c.Others.PanicAtFatal = false
 }
 
 type Config struct {
@@ -141,7 +225,7 @@ var DefaultConfig = Config{
 var DefaultOutputConfig = OutputConfig{
 	Output:                 os.Stdout,
 	UseBatching:            true,
-	BatchingFlushMaxTime:   250 * time.Millisecond, // will flush every 100 millisecond as default, decrease if want faster logging or increase if doesn't care about output timing, lowest can be a millisecond
+	BatchingFlushMaxTime:   250 * time.Millisecond, // will flush every 250 millisecond as default, decrease if want faster logging or increase if doesn't care about output timing, lowest can be a millisecond
 	BatchingFlushMaxBuffer: 32768,                  // 32 kb buffer
 }
 var DefaultLogConfig = LogConfig{
