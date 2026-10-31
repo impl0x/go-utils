@@ -38,6 +38,7 @@ func writeUint64(b WriteAble, n uint64) {
 		buf[pos] = byte('0' + n%10)
 		n /= 10
 	}
-
-	b.Write(buf[pos:])
+	for i := pos; i < len(buf); i++ {
+		b.WriteByte(buf[i])
+	}
 }
