@@ -18,8 +18,8 @@ func WithOutputWriter(w io.Writer) Option {
 	}
 }
 
-func WithOutputBatchingOFF(c *Config) {
-	c.Output.UseBatching = false
+func WithOutputBatchingON(c *Config) {
+	c.Output.UseBatching = true
 }
 
 func WithOutputMaxFlushBufferSize(s uint) Option {
@@ -225,8 +225,8 @@ var DefaultConfig = Config{
 
 var DefaultOutputConfig = OutputConfig{
 	Output:                 os.Stdout,
-	UseBatching:            true,
-	BatchingFlushMaxTime:   250 * time.Millisecond, // will flush every 250 millisecond as default, decrease if want faster logging or increase if doesn't care about output timing, lowest can be a millisecond
+	UseBatching:            false,                  // enable batching if doing high speed logging
+	BatchingFlushMaxTime:   250 * time.Millisecond, // will flush every 250 millisecond, decrease if want faster logging or increase if doesn't care about output timing, lowest can be a millisecond
 	BatchingFlushMaxBuffer: 32768,                  // 32 kb buffer
 }
 var DefaultLogConfig = LogConfig{
