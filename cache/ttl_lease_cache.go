@@ -95,3 +95,23 @@ func (t *TTLLeaseCache[K, V]) Acquire(key K) (TTLLeasedItem[K, V], bool) {
 func (t *TTLLeaseCache[K, V]) Add(key K, value V, expiresAt time.Time) {
 	t.Release(key, value, expiresAt)
 }
+
+// Loops over all elements in the cache and passes it the function provided.
+// This does not include currently acquired items, those will not be present.
+//
+// Note: the loop runs with a mutex, so no methods should be called
+// inside the function fn, or it will lead to a deadlock because the
+// methods want a lock acquire too, therefore blocking anyone from using
+// the cache, so make sure the function provided is not taking too long
+// to finish each iteration, and try to break early when done.
+//
+// returning 1 will break early, while 0 will continue the loop
+func (t *TTLLeaseCache[K, V]) LoopFunc(fn func(item TTLLeasedItem[K, V]) uint8) {
+	t.lc.mu.Lock()
+	for k, v := range t.lc.m {
+		if r := fn(TTLLeasedItem[K, V]{t, k, v}); r == 1 {
+			break
+		}
+	}
+	t.lc.mu.Unlock()
+}

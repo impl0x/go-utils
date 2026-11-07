@@ -82,3 +82,23 @@ func (m *LeaseCache[K, V]) Release(key K, value V) {
 func (m *LeaseCache[K, V]) Add(key K, value V) {
 	m.Release(key, value)
 }
+
+// Loops over all elements in the cache and passes it the function provided. 
+// This does not include currently acquired items, those will not be present.
+//
+// Note: the loop runs with a mutex, so no methods should be called
+// inside the function fn, or it will lead to a deadlock because the
+// methods want a lock acquire too, therefore blocking anyone from using
+// the cache, so make sure the function provided is not taking too long
+// to finish each iteration, and try to break early when done.
+//
+// returning 1 will break early, while 0 will continue the loop
+func (m *LeaseCache[K, V]) LoopFunc(fn func(item LeasedItem[K, V]) uint8) {
+	m.mu.Lock()
+	for k, v := range m.m {
+		if r := fn(LeasedItem[K, V]{m, k, v}); r == 1 {
+			break
+		}
+	}
+	m.mu.Unlock()
+}
