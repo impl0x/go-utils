@@ -25,34 +25,41 @@ func NewWithConfig(l Level, c *Config, opts ...Option) Logger {
 	}
 }
 
+func (l Logger) log(lv level, m string, kv []string) {
+	if l.e == nil {
+		panic("logger: engine is nil, this should not happen, you might be using a empty logger instance without a engine.")
+	}
+	l.e.log(lv, m, kv)
+}
+
 func (l Logger) Trace(m string, kv ...string) {
-	l.e.log(levelTrace, m, kv)
+	l.log(levelTrace, m, kv)
 }
 
 func (l Logger) Debug(m string, kv ...string) {
 	if l.level <= 1 {
-		l.e.log(levelDebug, m, kv)
+		l.log(levelDebug, m, kv)
 	}
 }
 func (l Logger) Info(m string, kv ...string) {
 	if l.level <= 2 {
-		l.e.log(levelInfo, m, kv)
+		l.log(levelInfo, m, kv)
 	}
 }
 func (l Logger) Warn(m string, kv ...string) {
 	if l.level <= 3 {
-		l.e.log(levelWarn, m, kv)
+		l.log(levelWarn, m, kv)
 	}
 }
 func (l Logger) Error(m string, kv ...string) {
 	if l.level <= 4 {
-		l.e.log(levelError, m, kv)
+		l.log(levelError, m, kv)
 	}
 }
 
 func (l Logger) Fatal(m string, kv ...string) {
 	if l.level <= 5 {
-		l.e.log(levelFatal, m, kv)
+		l.log(levelFatal, m, kv)
 		if l.e.config.Others.PanicAtFatal {
 			panic("fatal log")
 		}
