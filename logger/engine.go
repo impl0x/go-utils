@@ -38,9 +38,6 @@ func newEngine(config *Config) *engine {
 }
 
 func (e *engine) log(l level, m string, kv []string) {
-	if len(kv)%2 != 0 {
-		panic("log: invalid number of key value pairs passed!")
-	}
 	b := e.pool.Get()
 	writeColorStart(b, e.config.Color.Time)
 	e.timeWriter.write(b)
