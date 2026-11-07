@@ -8,6 +8,27 @@ type TTLLeaseCache[K k, V v] struct {
 	lc LeaseCache[K, ttlItem[V]]
 }
 
+func NewTTLLeaseCache[K k, V v](cleanupInterval time.Duration) *TTLLeaseCache[K, V] {
+	t := TTLLeaseCache[K, V]{
+		LeaseCache[K, ttlItem[V]]{m: make(map[K]ttlItem[V])},
+	}
+	go t.ttlLeaseCacheCleaner(cleanupInterval)
+	return &t
+}
+
+func (t *TTLLeaseCache[K, V]) ttlLeaseCacheCleaner(cleanupInterval time.Duration) {
+	ticker := time.NewTicker(cleanupInterval)
+	for range ticker.C {
+		t.lc.mu.Lock()
+		for k, v := range t.lc.m {
+			if v.expiresAt.Before(time.Now()) {
+				delete(t.lc.m, k)
+			}
+		}
+		t.lc.mu.Unlock()
+	}
+}
+
 // Represents a time to live Leased Item from the pool cache
 type TTLLeasedItem[K k, V v] struct {
 	parent   *TTLLeaseCache[K, V]
@@ -41,6 +62,9 @@ func (l TTLLeasedItem[K, V]) Nil() bool {
 //
 // this method calls its parent [TTLLeaseCache.Release] directly
 func (t TTLLeasedItem[K, V]) Release() {
+	if t.Nil() {
+		return
+	}
 	t.parent.Release(t.key, t.ttlValue.value, t.ttlValue.expiresAt)
 }
 

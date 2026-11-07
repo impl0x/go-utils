@@ -19,6 +19,10 @@ type LeaseCache[K k, V v] struct {
 	mu sync.Mutex
 }
 
+func NewLeaseCache[K k, V v]() *LeaseCache[K, V] {
+	return &LeaseCache[K, V]{m: make(map[K]V)}
+}
+
 // Represents a Leased Item from the pool cache
 type LeasedItem[K k, V v] struct {
 	parent *LeaseCache[K, V]
