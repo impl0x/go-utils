@@ -31,46 +31,59 @@ func (t *TTLLeaseCache[K, V]) ttlLeaseCacheCleaner(cleanupInterval time.Duration
 
 // Represents a time to live Leased Item from the pool cache
 type TTLLeasedItem[K k, V v] struct {
-	parent   *TTLLeaseCache[K, V]
-	key      K
-	ttlValue ttlItem[V]
+	parent       *TTLLeaseCache[K, V]
+	key          K
+	ttlValue     ttlItem[V]
+	release      bool
+	releaseCount uint8
 }
 
 // returns the key of the item
-func (t TTLLeasedItem[K, V]) Key() K {
+func (t *TTLLeasedItem[K, V]) Key() K {
 	return t.key
 }
 
 // returns the value of the item
-func (t TTLLeasedItem[K, V]) Value() V {
+func (t *TTLLeasedItem[K, V]) Value() V {
 	return t.ttlValue.value
 }
 
 // returns when the item will expire
-func (t TTLLeasedItem[K, V]) ExpiresAt() time.Time {
+func (t *TTLLeasedItem[K, V]) ExpiresAt() time.Time {
 	return t.ttlValue.expiresAt
 }
 
-// returns if a leased item's underlying value is nil
-func (l TTLLeasedItem[K, V]) Nil() bool {
-	return l.parent == nil
-}
-
-// releases the item back into the pool,
-// attempting to acquire this item after release has been
-// called will result it in not failing and returning the item
+// Releases the item back into the pool only if [TTLLeasedItem.Delete] has
+// not been called previously.
+//
+// Multiple calls to Release or calling Release after calling Delete does
+// not affect it, items are only released once and are not released if
+// Delete was called previously. Therefore this function is safe to defer
+// in your own functions where you acquire a item and work with it.
+// You can then later call [TTLLeasedItem.Delete] if wanting to prevent release
+// which makes the item be deleted.
 //
 // this method calls its parent [TTLLeaseCache.Release] directly
-func (t TTLLeasedItem[K, V]) Release() {
-	if t.Nil() {
-		return
+func (t *TTLLeasedItem[K, V]) Release() {
+	if t.releaseCount == 0 && t.release {
+		t.releaseCount++
+		t.parent.Release(t.key, t.ttlValue.value, t.ttlValue.expiresAt)
 	}
-	t.parent.Release(t.key, t.ttlValue.value, t.ttlValue.expiresAt)
+}
+
+// Sets the internal flag of being released to false so that
+// any calls to [LeasedItem.Release] after this has been called
+// prevents the item from being released.
+func (t *TTLLeasedItem[K, V]) Delete() {
+	t.release = false
 }
 
 // Releases the item associated with this key and value.
 //
-// Explained briefly in [TTLLeasedItem.Release]
+// Explained briefly in [TTLLeaseItem.Release].
+// Note: do not call this multiple times or defer this,
+// the Release for TTLLeasedItem and TTLLeaseCache are different.
+// This method is the internal implementation of releasing an item back to the pool
 func (t *TTLLeaseCache[K, V]) Release(key K, value V, expiresAt time.Time) {
 	// we cannot add a expired item back into the cache
 	if expiresAt.Before(time.Now()) {
@@ -83,12 +96,12 @@ func (t *TTLLeaseCache[K, V]) Release(key K, value V, expiresAt time.Time) {
 // if the item has currently been acquired then this will fail.
 // Hence it will return a [TTLLeasedItem] whose underlying value is nil
 // and false for the second return value
-func (t *TTLLeaseCache[K, V]) Acquire(key K) (TTLLeasedItem[K, V], bool) {
+func (t *TTLLeaseCache[K, V]) Acquire(key K) (*TTLLeasedItem[K, V], bool) {
 	li, ok := t.lc.Acquire(key)
 	if !ok {
 		t = nil
 	}
-	return TTLLeasedItem[K, V]{t, li.key, li.value}, ok
+	return &TTLLeasedItem[K, V]{t, li.key, li.value, true, 0}, ok
 }
 
 // Adds a item to the pool cache, this is the absolute same as calling Release.
@@ -105,13 +118,11 @@ func (t *TTLLeaseCache[K, V]) Add(key K, value V, expiresAt time.Time) {
 // the cache, so make sure the function provided is not taking too long
 // to finish each iteration, and try to break early when done.
 //
-// returning 1 will break early, while 0 will continue the loop
-func (t *TTLLeaseCache[K, V]) LoopFunc(fn func(item TTLLeasedItem[K, V]) uint8) {
-	t.lc.mu.Lock()
-	for k, v := range t.lc.m {
-		if r := fn(TTLLeasedItem[K, V]{t, k, v}); r == 1 {
-			break
-		}
-	}
-	t.lc.mu.Unlock()
+// returning true will break early, while false will continue the loop
+func (t *TTLLeaseCache[K, V]) LoopFunc(fn func(k K, v V, expiresAt time.Time) bool) {
+	t.lc.LoopFunc(
+		func(key K, value ttlItem[V]) bool {
+			return fn(key, value.value, value.expiresAt)
+		},
+	)
 }
