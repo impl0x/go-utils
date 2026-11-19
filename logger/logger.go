@@ -25,6 +25,13 @@ func NewWithConfig(l Level, c *Config, opts ...Option) Logger {
 	}
 }
 
+// Returns whether the current instance is Nil
+//
+// checks if the underlying pointer to a engine instance is nil
+func (l Logger) Nil() bool {
+	return l.e == nil
+}
+
 func (l Logger) log(lv level, m string, kv []string) {
 	if l.e == nil {
 		panic("logger: engine is nil, this should not happen, you might be using a empty logger instance without a engine.")
