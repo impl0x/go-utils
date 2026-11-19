@@ -21,13 +21,13 @@ func newBasicCache[K k, V v](config BasicCacheConfig) *BasicCache[K, V] {
 	}
 }
 
-// Instantiates a new cache using the generic types provided to this constructor function and default [DefaultCacheConfig]
-func NewBasicCache[K comparable, V any]() *BasicCache[K, V] {
+// Instantiates a new cache using the generic types provided to this constructor function and default [DefaultBasicCacheConfig]
+func NewBasicCache[K k, V v]() *BasicCache[K, V] {
 	return newBasicCache[K, V](DefaultBasicCacheConfig)
 }
 
 // Instantiates a new cache using the config provided and generics
-func NewCacheWithConfig[K comparable, V any](config BasicCacheConfig) *BasicCache[K, V] {
+func NewCacheWithConfig[K k, V v](config BasicCacheConfig) *BasicCache[K, V] {
 	return newBasicCache[K, V](config)
 }
 

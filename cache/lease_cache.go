@@ -76,7 +76,7 @@ func (l *LeasedItem[K, V]) Delete() {
 func (m *LeaseCache[K, V]) Acquire(key K) (*LeasedItem[K, V], bool) {
 	m.mu.Lock()
 	v, ok := m.m[key]
-	delete(m.m, key)
+	delete(m.m, key) // no need to check for ok here as delete is a no-op in nil cases
 	m.mu.Unlock()
 	if !ok {
 		m = nil // looks pretty illegal to do but I think it'll end up fine
